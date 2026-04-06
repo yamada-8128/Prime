@@ -115,16 +115,31 @@ function initApp() {
   primeTypes.forEach(type => {
     const div = document.createElement('div');
     div.className = 'zukan-item';
+    
+    // 最初の数個だけ表示する例
     const ex = generateExamples(type);
+    
+    // 10000以下の全リストを取得
+    const allPrimesOfType = primes.filter(p => type.isMatch(p)).join(', ');
+
     div.innerHTML = `
       <div class="zukan-title">${type.name}</div>
       <div class="zukan-desc">${type.description}</div>
       <div class="zukan-examples">例: ${ex}</div>
+      
+      <button class="show-all-btn" onclick="toggleFullList('${type.id}')" id="btn-${type.id}">
+        10000以下の ${type.name} を全て表示
+      </button>
+      <div class="all-numbers-container" id="container-${type.id}">
+        <div style="font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; color: var(--text-muted);">
+          全リスト (${primes.filter(p => type.isMatch(p)).length} 個):
+        </div>
+        <div class="all-numbers-list">${allPrimesOfType}</div>
+      </div>
     `;
     zukanList.appendChild(div);
   });
 
-  // MathJaxに動的生成したHTML内の数式を再レンダリングさせる
   if (window.MathJax) {
     MathJax.typesetPromise();
   }
@@ -132,9 +147,25 @@ function initApp() {
   resetGame();
 }
 
+// 全リストの表示・非表示を切り替える関数
+function toggleFullList(typeId) {
+  const container = document.getElementById(`container-${typeId}`);
+  const btn = document.getElementById(`btn-${typeId}`);
+  const typeObj = primeTypes.find(t => t.id === typeId);
+
+  if (container.classList.contains('active')) {
+    container.classList.remove('active');
+    btn.textContent = `10000以下の ${typeObj.name} を全て表示`;
+  } else {
+    container.classList.add('active');
+    btn.textContent = `閉じる`;
+  }
+}
+
+
 // 桁数に応じた素数リストを取得
 function getPrimesByDigits(digitConfig) {
-  if (digitConfig === "2") return primes.filter(p => p >= 10 && p <= 99);
+  if (digitConfig === "2") return primes.filter(p => p >= 1 && p <= 99);
   if (digitConfig === "3") return primes.filter(p => p >= 100 && p <= 999);
   if (digitConfig === "4") return primes.filter(p => p >= 1000 && p <= 9999);
   return primes; // any (10000以下すべて)
