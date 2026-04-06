@@ -1,0 +1,206 @@
+// --- アルゴリズム・データ構造 ---
+const MAX_PRIME = 10000;
+
+function sieveOfEratosthenes(max) {
+  let sieve = new Array(max + 1).fill(true);
+  sieve[0] = false; sieve[1] = false;
+  for (let p = 2; p * p <= max; p++) {
+    if (sieve[p]) {
+      for (let i = p * p; i <= max; i += p) sieve[i] = false;
+    }
+  }
+  let primes = [];
+  for (let p = 2; p <= max; p++) {
+    if (sieve[p]) primes.push(p);
+  }
+  return { primes, sieve };
+}
+
+const { primes, sieve } = sieveOfEratosthenes(MAX_PRIME);
+const isPrime = (n) => n <= MAX_PRIME ? sieve[n] : false;
+
+function modPowBig(base, exp, mod) {
+  let res = 1n;
+  let b = BigInt(base) % BigInt(mod);
+  let e = BigInt(exp);
+  const m = BigInt(mod);
+  while (e > 0n) {
+    if (e % 2n === 1n) res = (res * b) % m;
+    b = (b * b) % m;
+    e /= 2n;
+  }
+  return res;
+}
+
+// 説明文に $...$ を使うことでLaTeXとして綺麗に表示されます
+const primeTypes = [
+  {
+    id: "mersenne",
+    name: "メルセンヌ素数",
+    description: "$2^n - 1$ の形で表される素数です。",
+    isMatch: (p) => Number.isInteger(Math.log2(p + 1)),
+    generateLimit: 5
+  },
+  {
+    id: "sophie_germain",
+    name: "ソフィ・ジェルマン素数",
+    description: "$p$ が素数で、$2p + 1$ も素数になる場合の $p$ のことです。",
+    isMatch: (p) => {
+      const next = 2 * p + 1;
+      if (next <= MAX_PRIME) return sieve[next];
+      for(let i=2; i*i<=next; i++) { if(next%i===0) return false; }
+      return true;
+    },
+    generateLimit: 10
+  },
+  {
+    id: "safe",
+    name: "安全素数",
+    description: "$p$ が素数で、$\\frac{p-1}{2}$ も素数になる場合の $p$ のことです。",
+    isMatch: (p) => {
+      if (p === 2) return false;
+      const prev = (p - 1) / 2;
+      return isPrime(prev);
+    },
+    generateLimit: 10
+  },
+  {
+    id: "emirp",
+    name: "エマープ (Mアプ)",
+    description: "逆から数字を読んでも元の数と異なる別の素数になる素数です。",
+    isMatch: (p) => {
+      const str = p.toString();
+      const rev = str.split('').reverse().join('');
+      if (str === rev) return false;
+      return isPrime(parseInt(rev, 10));
+    },
+    generateLimit: 10
+  },
+  {
+    id: "wieferich",
+    name: "ヴィーフェリッヒ素数 (Bヘリ素数)",
+    description: "$2^{p-1} - 1$ が $p^2$ で割り切れる、非常に珍しい素数です。",
+    isMatch: (p) => {
+      if (p === 2) return false;
+      return modPowBig(2n, p - 1, p * p) === 1n;
+    },
+    generateLimit: 2
+  }
+];
+
+function generateExamples(typeObj) {
+  const examples = [];
+  for (let p of primes) {
+    if (typeObj.isMatch(p)) {
+      examples.push(p);
+      if (examples.length >= typeObj.generateLimit) break;
+    }
+  }
+  return examples.join(', ') + (examples.length === typeObj.generateLimit ? ', ...' : '');
+}
+
+// --- UI・アプリロジック ---
+let targetPrime = 0;
+
+function initApp() {
+  const select = document.getElementById('question-select');
+  primeTypes.forEach(type => {
+    const option = document.createElement('option');
+    option.value = type.id;
+    option.textContent = `この数は ${type.name} ですか？`;
+    select.appendChild(option);
+  });
+
+  const zukanList = document.getElementById('zukan-list');
+  primeTypes.forEach(type => {
+    const div = document.createElement('div');
+    div.className = 'zukan-item';
+    const ex = generateExamples(type);
+    div.innerHTML = `
+      <div class="zukan-title">${type.name}</div>
+      <div class="zukan-desc">${type.description}</div>
+      <div class="zukan-examples">例: ${ex}</div>
+    `;
+    zukanList.appendChild(div);
+  });
+
+  // MathJaxに動的生成したHTML内の数式を再レンダリングさせる
+  if (window.MathJax) {
+    MathJax.typesetPromise();
+  }
+
+  resetGame();
+}
+
+// 桁数に応じた素数リストを取得
+function getPrimesByDigits(digitConfig) {
+  if (digitConfig === "2") return primes.filter(p => p >= 10 && p <= 99);
+  if (digitConfig === "3") return primes.filter(p => p >= 100 && p <= 999);
+  if (digitConfig === "4") return primes.filter(p => p >= 1000 && p <= 9999);
+  return primes; // any (10000以下すべて)
+}
+
+function resetGame() {
+  const digitConfig = document.getElementById('digit-select').value;
+  const filteredPrimes = getPrimesByDigits(digitConfig);
+  
+  targetPrime = filteredPrimes[Math.floor(Math.random() * filteredPrimes.length)];
+  
+  document.getElementById('history-log').innerHTML = '<div style="font-weight: bold; margin-bottom: 10px;">質問履歴</div>';
+  document.getElementById('guess-input').value = '';
+  document.getElementById('result-message').textContent = '';
+  document.getElementById('target-info').textContent = `${targetPrime.toString().length}桁の素数を1つ決定しました。質問をして数を絞り込んでください！`;
+  
+  // 開発・デバッグ用（ブラウザの開発者ツールで確認できます）
+  console.log("正解の素数: " + targetPrime); 
+}
+
+function askQuestion() {
+  const select = document.getElementById('question-select');
+  const typeId = select.value;
+  const typeObj = primeTypes.find(t => t.id === typeId);
+  
+  const result = typeObj.isMatch(targetPrime);
+  
+  const logDiv = document.getElementById('history-log');
+  const item = document.createElement('div');
+  item.className = 'log-item';
+  
+  const ansText = result ? 'はい' : 'いいえ';
+  const ansClass = result ? 'ans-true' : 'ans-false';
+  
+  item.innerHTML = `
+    <span>Q. ${typeObj.name}ですか？</span>
+    <span class="${ansClass}">${ansText}</span>
+  `;
+  logDiv.insertBefore(item, logDiv.children[1]);
+}
+
+function guessPrime() {
+  const guess = parseInt(document.getElementById('guess-input').value, 10);
+  const msg = document.getElementById('result-message');
+  if (guess === targetPrime) {
+    msg.style.color = '#16a34a';
+    msg.textContent = `大正解！素数は ${targetPrime} でした！`;
+  } else {
+    msg.style.color = '#dc2626';
+    msg.textContent = '残念、違います。もう少し質問してみましょう。';
+  }
+}
+
+// 答えを見る関数
+function showAnswer() {
+  const msg = document.getElementById('result-message');
+  msg.style.color = '#d97706'; // オレンジ色
+  msg.textContent = `正解は ${targetPrime} でした！`;
+}
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+  
+  document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+window.onload = initApp;

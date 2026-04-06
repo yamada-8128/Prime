@@ -3,144 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
   <title>素数アキネーター＆図鑑</title>
-  <style>
-    /* モダンでスマホ対応のCSS */
-    :root {
-      --primary: #4f46e5;
-      --primary-hover: #4338ca;
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-    }
-    body {
-      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-      background-color: var(--bg);
-      color: var(--text-main);
-      margin: 0;
-      padding: 0;
-      line-height: 1.6;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    h1 {
-      font-size: 1.5rem;
-      color: var(--primary);
-    }
-    /* タブナビゲーション */
-    .tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 12px;
-      background: var(--surface);
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .tab-btn.active {
-      border-color: var(--primary);
-      color: var(--primary);
-      background: #eef2ff;
-    }
-    /* パネル */
-    .panel {
-      display: none;
-      background: var(--surface);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    .panel.active {
-      display: block;
-    }
-    /* フォーム要素 */
-    select, input, button {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 1rem;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    button:hover {
-      background-color: var(--primary-hover);
-    }
-    /* アキネーター履歴 */
-    #history-log {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-    }
-    .log-item {
-      padding: 8px 0;
-      border-bottom: 1px dashed var(--border);
-      display: flex;
-      justify-content: space-between;
-    }
-    .ans-true { color: #16a34a; font-weight: bold; }
-    .ans-false { color: #dc2626; font-weight: bold; }
-    
-    /* 図鑑リスト */
-    .zukan-item {
-      margin-bottom: 20px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border);
-    }
-    .zukan-item:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-      padding-bottom: 0;
-    }
-    .zukan-title {
-      font-size: 1.1rem;
-      font-weight: bold;
-      margin-bottom: 5px;
-      color: var(--primary);
-    }
-    .zukan-desc {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-    }
-    .zukan-examples {
-      font-family: monospace;
-      background: var(--bg);
-      padding: 8px;
-      border-radius: 6px;
-      word-wrap: break-word;
-    }
-    #result-message {
-      font-weight: bold;
-      text-align: center;
-      margin-bottom: 15px;
-    }
-  </style>
+  
+  <link rel="stylesheet" href="style.css?v=1">
+
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
 
@@ -155,8 +32,19 @@
   </div>
 
   <div id="akinator" class="panel active">
-    <p style="font-size: 0.9rem; color: var(--text-muted); text-align: center;">
-      10000以下の素数を1つ決定しました。<br>質問をして数を絞り込んでください！
+    
+    <div class="setting-group">
+      <label for="digit-select" style="font-size: 0.9rem; color: var(--text-muted); font-weight: bold;">出題される素数の桁数:</label>
+      <select id="digit-select" onchange="resetGame()" style="margin-bottom: 5px;">
+        <option value="any">指定なし (10000以下)</option>
+        <option value="2">2桁 (11 〜 97)</option>
+        <option value="3">3桁 (101 〜 997)</option>
+        <option value="4">4桁 (1009 〜 9973)</option>
+      </select>
+    </div>
+
+    <p id="target-info" style="font-size: 0.9rem; color: var(--text-muted); text-align: center;">
+      素数を1つ決定しました。質問をして数を絞り込んでください！
     </p>
 
     <select id="question-select"></select>
@@ -169,11 +57,14 @@
     
     <div id="result-message"></div>
 
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <button onclick="showAnswer()" class="btn-secondary">降参して答えを見る</button>
+      <button onclick="resetGame()" class="btn-muted">新しい素数にする</button>
+    </div>
+
     <div id="history-log">
       <div style="font-weight: bold; margin-bottom: 10px;">質問履歴</div>
       </div>
-    
-    <button onclick="resetGame()" style="margin-top: 20px; background-color: var(--text-muted);">新しい素数でやり直す</button>
   </div>
 
   <div id="zukan" class="panel">
@@ -182,199 +73,6 @@
   </div>
 </div>
 
-<script>
-  // --- アルゴリズム・データ構造 ---
-
-  // エラトステネスの篩で10000以下の素数を生成
-  const MAX_PRIME = 10000;
-  function sieveOfEratosthenes(max) {
-    let sieve = new Array(max + 1).fill(true);
-    sieve[0] = false; sieve[1] = false;
-    for (let p = 2; p * p <= max; p++) {
-      if (sieve[p]) {
-        for (let i = p * p; i <= max; i += p) sieve[i] = false;
-      }
-    }
-    let primes = [];
-    for (let p = 2; p <= max; p++) {
-      if (sieve[p]) primes.push(p);
-    }
-    return { primes, sieve };
-  }
-
-  const { primes, sieve } = sieveOfEratosthenes(MAX_PRIME);
-  const isPrime = (n) => n <= MAX_PRIME ? sieve[n] : false; // 簡易判定用
-
-  // 繰り返し二乗法（ヴィーフェリッヒ素数判定などでオーバーフローを防ぐため BigInt 使用）
-  function modPowBig(base, exp, mod) {
-    let res = 1n;
-    let b = BigInt(base) % BigInt(mod);
-    let e = BigInt(exp);
-    const m = BigInt(mod);
-    while (e > 0n) {
-      if (e % 2n === 1n) res = (res * b) % m;
-      b = (b * b) % m;
-      e /= 2n;
-    }
-    return res;
-  }
-
-  // 素数の種類と判定ロジックの一元管理
-  const primeTypes = [
-    {
-      id: "mersenne",
-      name: "メルセンヌ素数",
-      description: "2^n - 1 の形で表される素数です。",
-      isMatch: (p) => Number.isInteger(Math.log2(p + 1)),
-      generateLimit: 5
-    },
-    {
-      id: "sophie_germain",
-      name: "ソフィ・ジェルマン素数",
-      description: "p が素数で、2p + 1 も素数になる場合の p のことです。",
-      isMatch: (p) => {
-        const next = 2 * p + 1;
-        // 計算範囲を超える場合は愚直に素数判定
-        if (next <= MAX_PRIME) return sieve[next];
-        for(let i=2; i*i<=next; i++) { if(next%i===0) return false; }
-        return true;
-      },
-      generateLimit: 10
-    },
-    {
-      id: "safe",
-      name: "安全素数",
-      description: "p が素数で、(p-1)/2 も素数になる場合の p のことです。",
-      isMatch: (p) => {
-        if (p === 2) return false;
-        const prev = (p - 1) / 2;
-        return isPrime(prev);
-      },
-      generateLimit: 10
-    },
-    {
-      id: "emirp",
-      name: "エマープ (Mアプ)",
-      description: "逆から数字を読んでも元の数と異なる別の素数になる素数です。",
-      isMatch: (p) => {
-        const str = p.toString();
-        const rev = str.split('').reverse().join('');
-        if (str === rev) return false; // 回文数は除外
-        return isPrime(parseInt(rev, 10));
-      },
-      generateLimit: 10
-    },
-    {
-      id: "wieferich",
-      name: "ヴィーフェリッヒ素数 (Bヘリ素数)",
-      description: "2^(p-1) - 1 が p^2 で割り切れる、非常に珍しい素数です。",
-      isMatch: (p) => {
-        if (p === 2) return false;
-        // 2^(p-1) ≡ 1 (mod p^2) かどうかを BigInt で判定
-        return modPowBig(2n, p - 1, p * p) === 1n;
-      },
-      generateLimit: 2 // 10000以下には 1093 と 3511 しか存在しないため
-    }
-  ];
-
-  // 動的に具体例を生成する関数（計算量最適化済み）
-  function generateExamples(typeObj) {
-    const examples = [];
-    for (let p of primes) {
-      if (typeObj.isMatch(p)) {
-        examples.push(p);
-        if (examples.length >= typeObj.generateLimit) break;
-      }
-    }
-    return examples.join(', ') + (examples.length === typeObj.generateLimit ? ', ...' : '');
-  }
-
-  // --- UI・アプリロジック ---
-  let targetPrime = 0;
-
-  function initApp() {
-    // ドロップダウンの生成
-    const select = document.getElementById('question-select');
-    primeTypes.forEach(type => {
-      const option = document.createElement('option');
-      option.value = type.id;
-      option.textContent = `この数は ${type.name} ですか？`;
-      select.appendChild(option);
-    });
-
-    // 図鑑の動的レンダリング
-    const zukanList = document.getElementById('zukan-list');
-    primeTypes.forEach(type => {
-      const div = document.createElement('div');
-      div.className = 'zukan-item';
-      const ex = generateExamples(type); // ここで動的生成が走る
-      div.innerHTML = `
-        <div class="zukan-title">${type.name}</div>
-        <div class="zukan-desc">${type.description}</div>
-        <div class="zukan-examples">例: ${ex}</div>
-      `;
-      zukanList.appendChild(div);
-    });
-
-    resetGame();
-  }
-
-  function resetGame() {
-    // ランダムな素数を決定
-    targetPrime = primes[Math.floor(Math.random() * primes.length)];
-    document.getElementById('history-log').innerHTML = '<div style="font-weight: bold; margin-bottom: 10px;">質問履歴</div>';
-    document.getElementById('guess-input').value = '';
-    document.getElementById('result-message').textContent = '';
-    console.log("デバッグ用正解: " + targetPrime); // 開発中の確認用
-  }
-
-  function askQuestion() {
-    const select = document.getElementById('question-select');
-    const typeId = select.value;
-    const typeObj = primeTypes.find(t => t.id === typeId);
-    
-    // 判定ロジックの実行
-    const result = typeObj.isMatch(targetPrime);
-    
-    // 履歴に追加
-    const logDiv = document.getElementById('history-log');
-    const item = document.createElement('div');
-    item.className = 'log-item';
-    
-    const ansText = result ? 'はい' : 'いいえ';
-    const ansClass = result ? 'ans-true' : 'ans-false';
-    
-    item.innerHTML = `
-      <span>Q. ${typeObj.name}ですか？</span>
-      <span class="${ansClass}">${ansText}</span>
-    `;
-    // 先頭に追加していく
-    logDiv.insertBefore(item, logDiv.children[1]);
-  }
-
-  function guessPrime() {
-    const guess = parseInt(document.getElementById('guess-input').value, 10);
-    const msg = document.getElementById('result-message');
-    if (guess === targetPrime) {
-      msg.style.color = '#16a34a';
-      msg.textContent = `大正解！素数は ${targetPrime} でした！`;
-    } else {
-      msg.style.color = '#dc2626';
-      msg.textContent = '残念、違います。もう少し質問してみましょう。';
-    }
-  }
-
-  function switchTab(tabId) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
-    
-    document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
-    document.getElementById(tabId).classList.add('active');
-  }
-
-  // アプリ起動
-  window.onload = initApp;
-
-</script>
+<script src="script.js?v=1"></script>
 </body>
 </html>
